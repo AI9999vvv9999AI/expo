@@ -32,3 +32,2365 @@ Most of the [installation and configuration steps](/eas-update/getting-started) 
   ]}
   cmdCopy="eas channel:create production"
 />
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI網路安全監控中心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        
+        .dashboard {
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0,255,136,0.2);
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #00ff88;
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(0,255,136,0.5);
+        }
+        
+        .header p {
+            color: #b0c4de;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(0,255,136,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff88, transparent);
+            animation: scan 2s linear infinite;
+        }
+        
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #b0c4de;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .threat-level {
+            background: rgba(255,0,0,0.2);
+            border: 1px solid rgba(255,0,0,0.5);
+        }
+        
+        .threat-level .stat-number {
+            color: #ff4444;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .chart-container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0,255,136,0.2);
+        }
+        
+        .chart-title {
+            color: #00ff88;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chart-title::before {
+            content: '◉';
+            color: #ff4444;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
+        }
+        
+        .threat-chart {
+            width: 100%;
+            height: 200px;
+            position: relative;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .chart-bar {
+            position: absolute;
+            bottom: 0;
+            width: 8%;
+            background: linear-gradient(180deg, #ff4444, #ff8888);
+            border-radius: 2px 2px 0 0;
+            animation: grow 2s ease-out;
+        }
+        
+        @keyframes grow {
+            from { height: 0; }
+            to { height: var(--height); }
+        }
+        
+        .world-map {
+            width: 100%;
+            height: 250px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .map-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ff4444;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255,68,68,0.8);
+            animation: ping 2s ease-in-out infinite;
+        }
+        
+        @keyframes ping {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .log-entry {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px;
+        }
+        
+        .log-time {
+            color: #888;
+            margin-right: 10px;
+            min-width: 80px;
+        }
+        
+        .log-level {
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .log-critical { background: #ff4444; color: white; }
+        .log-warning { background: #ffaa00; color: white; }
+        .log-info { background: #00ff88; color: black; }
+        
+        .log-message {
+            flex: 1;
+            color: #b0c4de;
+        }
+        
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0,255,136,0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(0,255,136,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .ai-indicator {
+            width: 12px;
+            height: 12px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+        
+        .spider-container {
+            position: fixed;
+            top: 50%;
+            right: -50px;
+            width: 40px;
+            height: 40px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .spider {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #00ff88, #00ffff);
+            border-radius: 50%;
+            position: relative;
+            animation: crawl 10s linear infinite;
+        }
+        
+        @keyframes crawl {
+            0% { transform: translate(0, -200px) rotate(0deg); }
+            25% { transform: translate(-100px, -100px) rotate(90deg); }
+            50% { transform: translate(-100px, 100px) rotate(180deg); }
+            75% { transform: translate(0, 100px) rotate(270deg); }
+            100% { transform: translate(0, -200px) rotate(360deg); }
+        }
+        
+        .control-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0,255,136,0.2);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(0,255,136,0.3);
+            transform: scale(1.1);
+        }
+        
+        .alert-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,68,68,0.9);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .alert-banner.show {
+            transform: translateY(0);
+        }
+        
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0,255,136,0.3);
+            border-top: 3px solid #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="alert-banner" id="alertBanner">
+        🚨 檢測到高風險威脅 - 正在啟動防護措施
+    </div>
+
+    <div class="dashboard">
+        <header class="header">
+            <h1>🛡️ AI網路安全監控中心</h1>
+            <p>智慧威脅偵測 • 即時防護 • 24/7監控</p>
+        </header>
+
+        <div class="ai-status">
+            <div class="ai-indicator"></div>
+            <span>AI威脅偵測引擎運行中</span>
+            <span style="margin-left: auto; font-size: 12px;">NVIDIA GPU加速</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="activeThreats">1,429</div>
+                <div class="stat-label">活躍威脅</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="blockedAttacks">5</div>
+                <div class="stat-label">今日攔截</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="scannedSites">6,896</div>
+                <div class="stat-label">掃描網站</div>
+            </div>
+            <div class="stat-card threat-level">
+                <div class="stat-number">HIGH</div>
+                <div class="stat-label">威脅等級</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chart-container">
+                <h3 class="chart-title">威脅趨勢分析</h3>
+                <div class="threat-chart" id="threatChart"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">全球攻擊源分布</h3>
+                <div class="world-map" id="worldMap"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">AI分析日誌</h3>
+                <div class="log-container" id="logContainer"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">網路爬蟲狀態</h3>
+                <div class="log-container">
+                    <div class="log-entry">
+                        <div class="log-time">09:42</div>
+                        <div class="log-level log-info">SCAN</div>
+                        <div class="log-message">深網掃描完成 - 發現3個新威脅</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:38</div>
+                        <div class="log-level log-warning">ALERT</div>
+                        <div class="log-message">可疑IP活動 192.168.1.1</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:35</div>
+                        <div class="log-level log-critical">BLOCK</div>
+                        <div class="log-message">惡意軟體下載已阻止</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:32</div>
+                        <div class="log-level log-info">UPDATE</div>
+                        <div class="log-message">威脅情報數據庫已更新</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="spider-container">
+        <div class="spider"></div>
+    </div>
+
+    <div class="control-panel">
+        <button class="control-btn" onclick="triggerScan()" title="啟動掃描">🔍</button>
+        <button class="control-btn" onclick="showAlert()" title="模擬警報">⚠️</button>
+    </div>
+
+    <script>
+        // 數據更新
+        let threatCount = 1429;
+        let blockedCount = 5;
+        let scannedCount = 6896;
+
+        function updateStats() {
+            threatCount += Math.floor(Math.random() * 5);
+            blockedCount += Math.floor(Math.random() * 2);
+            scannedCount += Math.floor(Math.random() * 10);
+            
+            document.getElementById('activeThreats').textContent = threatCount.toLocaleString();
+            document.getElementById('blockedAttacks').textContent = blockedCount;
+            document.getElementById('scannedSites').textContent = scannedCount.toLocaleString();
+        }
+
+        // 創建威脅圖表
+        function createThreatChart() {
+            const chart = document.getElementById('threatChart');
+            const heights = [20, 35, 45, 60, 40, 70, 85, 90, 75, 95, 100, 85];
+            
+            heights.forEach((height, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.left = `${index * 8}%`;
+                bar.style.setProperty('--height', `${height}%`);
+                bar.style.animationDelay = `${index * 0.1}s`;
+                chart.appendChild(bar);
+            });
+        }
+
+        // 創建世界地圖威脅點
+        function createWorldMap() {
+            const map = document.getElementById('worldMap');
+            const threats = [
+                {x: '15%', y: '30%'}, // 歐洲
+                {x: '25%', y: '45%'}, // 非洲
+                {x: '70%', y: '25%'}, // 亞洲
+                {x: '80%', y: '40%'}, // 東南亞
+                {x: '20%', y: '50%'}, // 美洲
+                {x: '85%', y: '60%'}, // 澳洲
+            ];
+            
+            threats.forEach((threat, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'map-dot';
+                dot.style.left = threat.x;
+                dot.style.top = threat.y;
+                dot.style.animationDelay = `${index * 0.3}s`;
+                map.appendChild(dot);
+            });
+        }
+
+        // 添加日誌
+        function addLog(level, message) {
+            const container = document.getElementById('logContainer');
+            const time = new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'});
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <div class="log-time">${time}</div>
+                <div class="log-level log-${level}">${level.toUpperCase()}</div>
+                <div class="log-message">${message}</div>
+            `;
+            
+            container.insertBefore(entry, container.firstChild);
+            
+            // 保持最多20條日誌
+            while(container.children.length > 20) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // 隨機日誌生成
+        function generateRandomLog() {
+            const logs = [
+                {level: 'info', message: 'AI模型更新完成'},
+                {level: 'warning', message: '異常流量檢測到'},
+                {level: 'critical', message: 'DDoS攻擊已阻止'},
+                {level: 'info', message: '漏洞掃描完成'},
+                {level: 'warning', message: '可疑登入嘗試'},
+                {level: 'critical', message: '惡意代碼檢測'},
+                {level: 'info', message: '防火牆規則更新'},
+            ];
+            
+            const randomLog = logs[Math.floor(Math.random() * logs.length)];
+            addLog(randomLog.level, randomLog.message);
+        }
+
+        // 觸發掃描
+        function triggerScan() {
+            addLog('info', '手動掃描已啟動');
+            setTimeout(() => {
+                addLog('warning', '發現2個潛在威脅');
+                updateStats();
+            }, 2000);
+        }
+
+        // 顯示警報
+        function showAlert() {
+            const banner = document.getElementById('alertBanner');
+            banner.classList.add('show');
+            setTimeout(() => banner.classList.remove('show'), 3000);
+            addLog('critical', '高風險威脅警報觸發');
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            // 隱藏載入畫面
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }, 2000);
+            
+            createThreatChart();
+            createWorldMap();
+            
+            // 定期更新數據
+            setInterval(updateStats, 5000);
+            setInterval(generateRandomLog, 3000);
+            
+            // 初始日誌
+            addLog('info', '系統初始化完成');
+            addLog('info', 'AI引擎已啟動');
+        });
+
+        // 手機端觸控優化
+        document.addEventListener('touchstart', function(e) {
+            // 防止雙擊縮放
+        }, {passive: true});
+    </script>
+</body>
+</html>!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI網路安全監控中心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        
+        .dashboard {
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0,255,136,0.2);
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #00ff88;
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(0,255,136,0.5);
+        }
+        
+        .header p {
+            color: #b0c4de;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(0,255,136,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff88, transparent);
+            animation: scan 2s linear infinite;
+        }
+        
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #b0c4de;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .threat-level {
+            background: rgba(255,0,0,0.2);
+            border: 1px solid rgba(255,0,0,0.5);
+        }
+        
+        .threat-level .stat-number {
+            color: #ff4444;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .chart-container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0,255,136,0.2);
+        }
+        
+        .chart-title {
+            color: #00ff88;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chart-title::before {
+            content: '◉';
+            color: #ff4444;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
+        }
+        
+        .threat-chart {
+            width: 100%;
+            height: 200px;
+            position: relative;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .chart-bar {
+            position: absolute;
+            bottom: 0;
+            width: 8%;
+            background: linear-gradient(180deg, #ff4444, #ff8888);
+            border-radius: 2px 2px 0 0;
+            animation: grow 2s ease-out;
+        }
+        
+        @keyframes grow {
+            from { height: 0; }
+            to { height: var(--height); }
+        }
+        
+        .world-map {
+            width: 100%;
+            height: 250px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .map-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ff4444;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255,68,68,0.8);
+            animation: ping 2s ease-in-out infinite;
+        }
+        
+        @keyframes ping {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .log-entry {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px;
+        }
+        
+        .log-time {
+            color: #888;
+            margin-right: 10px;
+            min-width: 80px;
+        }
+        
+        .log-level {
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .log-critical { background: #ff4444; color: white; }
+        .log-warning { background: #ffaa00; color: white; }
+        .log-info { background: #00ff88; color: black; }
+        
+        .log-message {
+            flex: 1;
+            color: #b0c4de;
+        }
+        
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0,255,136,0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(0,255,136,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .ai-indicator {
+            width: 12px;
+            height: 12px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+        
+        .spider-container {
+            position: fixed;
+            top: 50%;
+            right: -50px;
+            width: 40px;
+            height: 40px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .spider {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #00ff88, #00ffff);
+            border-radius: 50%;
+            position: relative;
+            animation: crawl 10s linear infinite;
+        }
+        
+        @keyframes crawl {
+            0% { transform: translate(0, -200px) rotate(0deg); }
+            25% { transform: translate(-100px, -100px) rotate(90deg); }
+            50% { transform: translate(-100px, 100px) rotate(180deg); }
+            75% { transform: translate(0, 100px) rotate(270deg); }
+            100% { transform: translate(0, -200px) rotate(360deg); }
+        }
+        
+        .control-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0,255,136,0.2);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(0,255,136,0.3);
+            transform: scale(1.1);
+        }
+        
+        .alert-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,68,68,0.9);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .alert-banner.show {
+            transform: translateY(0);
+        }
+        
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0,255,136,0.3);
+            border-top: 3px solid #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="alert-banner" id="alertBanner">
+        🚨 檢測到高風險威脅 - 正在啟動防護措施
+    </div>
+
+    <div class="dashboard">
+        <header class="header">
+            <h1>🛡️ AI網路安全監控中心</h1>
+            <p>智慧威脅偵測 • 即時防護 • 24/7監控</p>
+        </header>
+
+        <div class="ai-status">
+            <div class="ai-indicator"></div>
+            <span>AI威脅偵測引擎運行中</span>
+            <span style="margin-left: auto; font-size: 12px;">NVIDIA GPU加速</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="activeThreats">1,429</div>
+                <div class="stat-label">活躍威脅</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="blockedAttacks">5</div>
+                <div class="stat-label">今日攔截</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="scannedSites">6,896</div>
+                <div class="stat-label">掃描網站</div>
+            </div>
+            <div class="stat-card threat-level">
+                <div class="stat-number">HIGH</div>
+                <div class="stat-label">威脅等級</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chart-container">
+                <h3 class="chart-title">威脅趨勢分析</h3>
+                <div class="threat-chart" id="threatChart"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">全球攻擊源分布</h3>
+                <div class="world-map" id="worldMap"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">AI分析日誌</h3>
+                <div class="log-container" id="logContainer"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">網路爬蟲狀態</h3>
+                <div class="log-container">
+                    <div class="log-entry">
+                        <div class="log-time">09:42</div>
+                        <div class="log-level log-info">SCAN</div>
+                        <div class="log-message">深網掃描完成 - 發現3個新威脅</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:38</div>
+                        <div class="log-level log-warning">ALERT</div>
+                        <div class="log-message">可疑IP活動 192.168.1.1</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:35</div>
+                        <div class="log-level log-critical">BLOCK</div>
+                        <div class="log-message">惡意軟體下載已阻止</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:32</div>
+                        <div class="log-level log-info">UPDATE</div>
+                        <div class="log-message">威脅情報數據庫已更新</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="spider-container">
+        <div class="spider"></div>
+    </div>
+
+    <div class="control-panel">
+        <button class="control-btn" onclick="triggerScan()" title="啟動掃描">🔍</button>
+        <button class="control-btn" onclick="showAlert()" title="模擬警報">⚠️</button>
+    </div>
+
+    <script>
+        // 數據更新
+        let threatCount = 1429;
+        let blockedCount = 5;
+        let scannedCount = 6896;
+
+        function updateStats() {
+            threatCount += Math.floor(Math.random() * 5);
+            blockedCount += Math.floor(Math.random() * 2);
+            scannedCount += Math.floor(Math.random() * 10);
+            
+            document.getElementById('activeThreats').textContent = threatCount.toLocaleString();
+            document.getElementById('blockedAttacks').textContent = blockedCount;
+            document.getElementById('scannedSites').textContent = scannedCount.toLocaleString();
+        }
+
+        // 創建威脅圖表
+        function createThreatChart() {
+            const chart = document.getElementById('threatChart');
+            const heights = [20, 35, 45, 60, 40, 70, 85, 90, 75, 95, 100, 85];
+            
+            heights.forEach((height, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.left = `${index * 8}%`;
+                bar.style.setProperty('--height', `${height}%`);
+                bar.style.animationDelay = `${index * 0.1}s`;
+                chart.appendChild(bar);
+            });
+        }
+
+        // 創建世界地圖威脅點
+        function createWorldMap() {
+            const map = document.getElementById('worldMap');
+            const threats = [
+                {x: '15%', y: '30%'}, // 歐洲
+                {x: '25%', y: '45%'}, // 非洲
+                {x: '70%', y: '25%'}, // 亞洲
+                {x: '80%', y: '40%'}, // 東南亞
+                {x: '20%', y: '50%'}, // 美洲
+                {x: '85%', y: '60%'}, // 澳洲
+            ];
+            
+            threats.forEach((threat, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'map-dot';
+                dot.style.left = threat.x;
+                dot.style.top = threat.y;
+                dot.style.animationDelay = `${index * 0.3}s`;
+                map.appendChild(dot);
+            });
+        }
+
+        // 添加日誌
+        function addLog(level, message) {
+            const container = document.getElementById('logContainer');
+            const time = new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'});
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <div class="log-time">${time}</div>
+                <div class="log-level log-${level}">${level.toUpperCase()}</div>
+                <div class="log-message">${message}</div>
+            `;
+            
+            container.insertBefore(entry, container.firstChild);
+            
+            // 保持最多20條日誌
+            while(container.children.length > 20) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // 隨機日誌生成
+        function generateRandomLog() {
+            const logs = [
+                {level: 'info', message: 'AI模型更新完成'},
+                {level: 'warning', message: '異常流量檢測到'},
+                {level: 'critical', message: 'DDoS攻擊已阻止'},
+                {level: 'info', message: '漏洞掃描完成'},
+                {level: 'warning', message: '可疑登入嘗試'},
+                {level: 'critical', message: '惡意代碼檢測'},
+                {level: 'info', message: '防火牆規則更新'},
+            ];
+            
+            const randomLog = logs[Math.floor(Math.random() * logs.length)];
+            addLog(randomLog.level, randomLog.message);
+        }
+
+        // 觸發掃描
+        function triggerScan() {
+            addLog('info', '手動掃描已啟動');
+            setTimeout(() => {
+                addLog('warning', '發現2個潛在威脅');
+                updateStats();
+            }, 2000);
+        }
+
+        // 顯示警報
+        function showAlert() {
+            const banner = document.getElementById('alertBanner');
+            banner.classList.add('show');
+            setTimeout(() => banner.classList.remove('show'), 3000);
+            addLog('critical', '高風險威脅警報觸發');
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            // 隱藏載入畫面
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }, 2000);
+            
+            createThreatChart();
+            createWorldMap();
+            
+            // 定期更新數據
+            setInterval(updateStats, 5000);
+            setInterval(generateRandomLog, 3000);
+            
+            // 初始日誌
+            addLog('info', '系統初始化完成');
+            addLog('info', 'AI引擎已啟動');
+        });
+
+        // 手機端觸控優化
+        document.addEventListener('touchstart', function(e) {
+            // 防止雙擊縮放
+        }, {passive: true});
+    </script>
+</body>
+</html>!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI網路安全監控中心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        
+        .dashboard {
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0,255,136,0.2);
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #00ff88;
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(0,255,136,0.5);
+        }
+        
+        .header p {
+            color: #b0c4de;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(0,255,136,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff88, transparent);
+            animation: scan 2s linear infinite;
+        }
+        
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #b0c4de;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .threat-level {
+            background: rgba(255,0,0,0.2);
+            border: 1px solid rgba(255,0,0,0.5);
+        }
+        
+        .threat-level .stat-number {
+            color: #ff4444;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .chart-container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0,255,136,0.2);
+        }
+        
+        .chart-title {
+            color: #00ff88;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chart-title::before {
+            content: '◉';
+            color: #ff4444;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
+        }
+        
+        .threat-chart {
+            width: 100%;
+            height: 200px;
+            position: relative;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .chart-bar {
+            position: absolute;
+            bottom: 0;
+            width: 8%;
+            background: linear-gradient(180deg, #ff4444, #ff8888);
+            border-radius: 2px 2px 0 0;
+            animation: grow 2s ease-out;
+        }
+        
+        @keyframes grow {
+            from { height: 0; }
+            to { height: var(--height); }
+        }
+        
+        .world-map {
+            width: 100%;
+            height: 250px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .map-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ff4444;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255,68,68,0.8);
+            animation: ping 2s ease-in-out infinite;
+        }
+        
+        @keyframes ping {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .log-entry {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px;
+        }
+        
+        .log-time {
+            color: #888;
+            margin-right: 10px;
+            min-width: 80px;
+        }
+        
+        .log-level {
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .log-critical { background: #ff4444; color: white; }
+        .log-warning { background: #ffaa00; color: white; }
+        .log-info { background: #00ff88; color: black; }
+        
+        .log-message {
+            flex: 1;
+            color: #b0c4de;
+        }
+        
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0,255,136,0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(0,255,136,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .ai-indicator {
+            width: 12px;
+            height: 12px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+        
+        .spider-container {
+            position: fixed;
+            top: 50%;
+            right: -50px;
+            width: 40px;
+            height: 40px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .spider {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #00ff88, #00ffff);
+            border-radius: 50%;
+            position: relative;
+            animation: crawl 10s linear infinite;
+        }
+        
+        @keyframes crawl {
+            0% { transform: translate(0, -200px) rotate(0deg); }
+            25% { transform: translate(-100px, -100px) rotate(90deg); }
+            50% { transform: translate(-100px, 100px) rotate(180deg); }
+            75% { transform: translate(0, 100px) rotate(270deg); }
+            100% { transform: translate(0, -200px) rotate(360deg); }
+        }
+        
+        .control-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0,255,136,0.2);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(0,255,136,0.3);
+            transform: scale(1.1);
+        }
+        
+        .alert-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,68,68,0.9);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .alert-banner.show {
+            transform: translateY(0);
+        }
+        
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0,255,136,0.3);
+            border-top: 3px solid #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="alert-banner" id="alertBanner">
+        🚨 檢測到高風險威脅 - 正在啟動防護措施
+    </div>
+
+    <div class="dashboard">
+        <header class="header">
+            <h1>🛡️ AI網路安全監控中心</h1>
+            <p>智慧威脅偵測 • 即時防護 • 24/7監控</p>
+        </header>
+
+        <div class="ai-status">
+            <div class="ai-indicator"></div>
+            <span>AI威脅偵測引擎運行中</span>
+            <span style="margin-left: auto; font-size: 12px;">NVIDIA GPU加速</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="activeThreats">1,429</div>
+                <div class="stat-label">活躍威脅</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="blockedAttacks">5</div>
+                <div class="stat-label">今日攔截</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="scannedSites">6,896</div>
+                <div class="stat-label">掃描網站</div>
+            </div>
+            <div class="stat-card threat-level">
+                <div class="stat-number">HIGH</div>
+                <div class="stat-label">威脅等級</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chart-container">
+                <h3 class="chart-title">威脅趨勢分析</h3>
+                <div class="threat-chart" id="threatChart"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">全球攻擊源分布</h3>
+                <div class="world-map" id="worldMap"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">AI分析日誌</h3>
+                <div class="log-container" id="logContainer"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">網路爬蟲狀態</h3>
+                <div class="log-container">
+                    <div class="log-entry">
+                        <div class="log-time">09:42</div>
+                        <div class="log-level log-info">SCAN</div>
+                        <div class="log-message">深網掃描完成 - 發現3個新威脅</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:38</div>
+                        <div class="log-level log-warning">ALERT</div>
+                        <div class="log-message">可疑IP活動 192.168.1.1</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:35</div>
+                        <div class="log-level log-critical">BLOCK</div>
+                        <div class="log-message">惡意軟體下載已阻止</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:32</div>
+                        <div class="log-level log-info">UPDATE</div>
+                        <div class="log-message">威脅情報數據庫已更新</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="spider-container">
+        <div class="spider"></div>
+    </div>
+
+    <div class="control-panel">
+        <button class="control-btn" onclick="triggerScan()" title="啟動掃描">🔍</button>
+        <button class="control-btn" onclick="showAlert()" title="模擬警報">⚠️</button>
+    </div>
+
+    <script>
+        // 數據更新
+        let threatCount = 1429;
+        let blockedCount = 5;
+        let scannedCount = 6896;
+
+        function updateStats() {
+            threatCount += Math.floor(Math.random() * 5);
+            blockedCount += Math.floor(Math.random() * 2);
+            scannedCount += Math.floor(Math.random() * 10);
+            
+            document.getElementById('activeThreats').textContent = threatCount.toLocaleString();
+            document.getElementById('blockedAttacks').textContent = blockedCount;
+            document.getElementById('scannedSites').textContent = scannedCount.toLocaleString();
+        }
+
+        // 創建威脅圖表
+        function createThreatChart() {
+            const chart = document.getElementById('threatChart');
+            const heights = [20, 35, 45, 60, 40, 70, 85, 90, 75, 95, 100, 85];
+            
+            heights.forEach((height, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.left = `${index * 8}%`;
+                bar.style.setProperty('--height', `${height}%`);
+                bar.style.animationDelay = `${index * 0.1}s`;
+                chart.appendChild(bar);
+            });
+        }
+
+        // 創建世界地圖威脅點
+        function createWorldMap() {
+            const map = document.getElementById('worldMap');
+            const threats = [
+                {x: '15%', y: '30%'}, // 歐洲
+                {x: '25%', y: '45%'}, // 非洲
+                {x: '70%', y: '25%'}, // 亞洲
+                {x: '80%', y: '40%'}, // 東南亞
+                {x: '20%', y: '50%'}, // 美洲
+                {x: '85%', y: '60%'}, // 澳洲
+            ];
+            
+            threats.forEach((threat, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'map-dot';
+                dot.style.left = threat.x;
+                dot.style.top = threat.y;
+                dot.style.animationDelay = `${index * 0.3}s`;
+                map.appendChild(dot);
+            });
+        }
+
+        // 添加日誌
+        function addLog(level, message) {
+            const container = document.getElementById('logContainer');
+            const time = new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'});
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <div class="log-time">${time}</div>
+                <div class="log-level log-${level}">${level.toUpperCase()}</div>
+                <div class="log-message">${message}</div>
+            `;
+            
+            container.insertBefore(entry, container.firstChild);
+            
+            // 保持最多20條日誌
+            while(container.children.length > 20) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // 隨機日誌生成
+        function generateRandomLog() {
+            const logs = [
+                {level: 'info', message: 'AI模型更新完成'},
+                {level: 'warning', message: '異常流量檢測到'},
+                {level: 'critical', message: 'DDoS攻擊已阻止'},
+                {level: 'info', message: '漏洞掃描完成'},
+                {level: 'warning', message: '可疑登入嘗試'},
+                {level: 'critical', message: '惡意代碼檢測'},
+                {level: 'info', message: '防火牆規則更新'},
+            ];
+            
+            const randomLog = logs[Math.floor(Math.random() * logs.length)];
+            addLog(randomLog.level, randomLog.message);
+        }
+
+        // 觸發掃描
+        function triggerScan() {
+            addLog('info', '手動掃描已啟動');
+            setTimeout(() => {
+                addLog('warning', '發現2個潛在威脅');
+                updateStats();
+            }, 2000);
+        }
+
+        // 顯示警報
+        function showAlert() {
+            const banner = document.getElementById('alertBanner');
+            banner.classList.add('show');
+            setTimeout(() => banner.classList.remove('show'), 3000);
+            addLog('critical', '高風險威脅警報觸發');
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            // 隱藏載入畫面
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }, 2000);
+            
+            createThreatChart();
+            createWorldMap();
+            
+            // 定期更新數據
+            setInterval(updateStats, 5000);
+            setInterval(generateRandomLog, 3000);
+            
+            // 初始日誌
+            addLog('info', '系統初始化完成');
+            addLog('info', 'AI引擎已啟動');
+        });
+
+        // 手機端觸控優化
+        document.addEventListener('touchstart', function(e) {
+            // 防止雙擊縮放
+        }, {passive: true});
+    </script>
+</body>
+</html>
+!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI網路安全監控中心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        
+        .dashboard {
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0,255,136,0.2);
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #00ff88;
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(0,255,136,0.5);
+        }
+        
+        .header p {
+            color: #b0c4de;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(0,255,136,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff88, transparent);
+            animation: scan 2s linear infinite;
+        }
+        
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #b0c4de;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .threat-level {
+            background: rgba(255,0,0,0.2);
+            border: 1px solid rgba(255,0,0,0.5);
+        }
+        
+        .threat-level .stat-number {
+            color: #ff4444;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .chart-container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0,255,136,0.2);
+        }
+        
+        .chart-title {
+            color: #00ff88;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chart-title::before {
+            content: '◉';
+            color: #ff4444;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
+        }
+        
+        .threat-chart {
+            width: 100%;
+            height: 200px;
+            position: relative;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .chart-bar {
+            position: absolute;
+            bottom: 0;
+            width: 8%;
+            background: linear-gradient(180deg, #ff4444, #ff8888);
+            border-radius: 2px 2px 0 0;
+            animation: grow 2s ease-out;
+        }
+        
+        @keyframes grow {
+            from { height: 0; }
+            to { height: var(--height); }
+        }
+        
+        .world-map {
+            width: 100%;
+            height: 250px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .map-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ff4444;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255,68,68,0.8);
+            animation: ping 2s ease-in-out infinite;
+        }
+        
+        @keyframes ping {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .log-entry {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px;
+        }
+        
+        .log-time {
+            color: #888;
+            margin-right: 10px;
+            min-width: 80px;
+        }
+        
+        .log-level {
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .log-critical { background: #ff4444; color: white; }
+        .log-warning { background: #ffaa00; color: white; }
+        .log-info { background: #00ff88; color: black; }
+        
+        .log-message {
+            flex: 1;
+            color: #b0c4de;
+        }
+        
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0,255,136,0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(0,255,136,0.3);
+            margin-bottom: 20px;
+        }
+        
+        .ai-indicator {
+            width: 12px;
+            height: 12px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+        
+        .spider-container {
+            position: fixed;
+            top: 50%;
+            right: -50px;
+            width: 40px;
+            height: 40px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .spider {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #00ff88, #00ffff);
+            border-radius: 50%;
+            position: relative;
+            animation: crawl 10s linear infinite;
+        }
+        
+        @keyframes crawl {
+            0% { transform: translate(0, -200px) rotate(0deg); }
+            25% { transform: translate(-100px, -100px) rotate(90deg); }
+            50% { transform: translate(-100px, 100px) rotate(180deg); }
+            75% { transform: translate(0, 100px) rotate(270deg); }
+            100% { transform: translate(0, -200px) rotate(360deg); }
+        }
+        
+        .control-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0,255,136,0.2);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(0,255,136,0.3);
+            transform: scale(1.1);
+        }
+        
+        .alert-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,68,68,0.9);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .alert-banner.show {
+            transform: translateY(0);
+        }
+        
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0,255,136,0.3);
+            border-top: 3px solid #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="alert-banner" id="alertBanner">
+        🚨 檢測到高風險威脅 - 正在啟動防護措施
+    </div>
+
+    <div class="dashboard">
+        <header class="header">
+            <h1>🛡️ AI網路安全監控中心</h1>
+            <p>智慧威脅偵測 • 即時防護 • 24/7監控</p>
+        </header>
+
+        <div class="ai-status">
+            <div class="ai-indicator"></div>
+            <span>AI威脅偵測引擎運行中</span>
+            <span style="margin-left: auto; font-size: 12px;">NVIDIA GPU加速</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="activeThreats">1,429</div>
+                <div class="stat-label">活躍威脅</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="blockedAttacks">5</div>
+                <div class="stat-label">今日攔截</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="scannedSites">6,896</div>
+                <div class="stat-label">掃描網站</div>
+            </div>
+            <div class="stat-card threat-level">
+                <div class="stat-number">HIGH</div>
+                <div class="stat-label">威脅等級</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chart-container">
+                <h3 class="chart-title">威脅趨勢分析</h3>
+                <div class="threat-chart" id="threatChart"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">全球攻擊源分布</h3>
+                <div class="world-map" id="worldMap"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">AI分析日誌</h3>
+                <div class="log-container" id="logContainer"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">網路爬蟲狀態</h3>
+                <div class="log-container">
+                    <div class="log-entry">
+                        <div class="log-time">09:42</div>
+                        <div class="log-level log-info">SCAN</div>
+                        <div class="log-message">深網掃描完成 - 發現3個新威脅</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:38</div>
+                        <div class="log-level log-warning">ALERT</div>
+                        <div class="log-message">可疑IP活動 192.168.1.1</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:35</div>
+                        <div class="log-level log-critical">BLOCK</div>
+                        <div class="log-message">惡意軟體下載已阻止</div>
+                    </div>
+                    <div class="log-entry">
+                        <div class="log-time">09:32</div>
+                        <div class="log-level log-info">UPDATE</div>
+                        <div class="log-message">威脅情報數據庫已更新</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="spider-container">
+        <div class="spider"></div>
+    </div>
+
+    <div class="control-panel">
+        <button class="control-btn" onclick="triggerScan()" title="啟動掃描">🔍</button>
+        <button class="control-btn" onclick="showAlert()" title="模擬警報">⚠️</button>
+    </div>
+
+    <script>
+        // 數據更新
+        let threatCount = 1429;
+        let blockedCount = 5;
+        let scannedCount = 6896;
+
+        function updateStats() {
+            threatCount += Math.floor(Math.random() * 5);
+            blockedCount += Math.floor(Math.random() * 2);
+            scannedCount += Math.floor(Math.random() * 10);
+            
+            document.getElementById('activeThreats').textContent = threatCount.toLocaleString();
+            document.getElementById('blockedAttacks').textContent = blockedCount;
+            document.getElementById('scannedSites').textContent = scannedCount.toLocaleString();
+        }
+
+        // 創建威脅圖表
+        function createThreatChart() {
+            const chart = document.getElementById('threatChart');
+            const heights = [20, 35, 45, 60, 40, 70, 85, 90, 75, 95, 100, 85];
+            
+            heights.forEach((height, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.left = `${index * 8}%`;
+                bar.style.setProperty('--height', `${height}%`);
+                bar.style.animationDelay = `${index * 0.1}s`;
+                chart.appendChild(bar);
+            });
+        }
+
+        // 創建世界地圖威脅點
+        function createWorldMap() {
+            const map = document.getElementById('worldMap');
+            const threats = [
+                {x: '15%', y: '30%'}, // 歐洲
+                {x: '25%', y: '45%'}, // 非洲
+                {x: '70%', y: '25%'}, // 亞洲
+                {x: '80%', y: '40%'}, // 東南亞
+                {x: '20%', y: '50%'}, // 美洲
+                {x: '85%', y: '60%'}, // 澳洲
+            ];
+            
+            threats.forEach((threat, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'map-dot';
+                dot.style.left = threat.x;
+                dot.style.top = threat.y;
+                dot.style.animationDelay = `${index * 0.3}s`;
+                map.appendChild(dot);
+            });
+        }
+
+        // 添加日誌
+        function addLog(level, message) {
+            const container = document.getElementById('logContainer');
+            const time = new Date().toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'});
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <div class="log-time">${time}</div>
+                <div class="log-level log-${level}">${level.toUpperCase()}</div>
+                <div class="log-message">${message}</div>
+            `;
+            
+            container.insertBefore(entry, container.firstChild);
+            
+            // 保持最多20條日誌
+            while(container.children.length > 20) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // 隨機日誌生成
+        function generateRandomLog() {
+            const logs = [
+                {level: 'info', message: 'AI模型更新完成'},
+                {level: 'warning', message: '異常流量檢測到'},
+                {level: 'critical', message: 'DDoS攻擊已阻止'},
+                {level: 'info', message: '漏洞掃描完成'},
+                {level: 'warning', message: '可疑登入嘗試'},
+                {level: 'critical', message: '惡意代碼檢測'},
+                {level: 'info', message: '防火牆規則更新'},
+            ];
+            
+            const randomLog = logs[Math.floor(Math.random() * logs.length)];
+            addLog(randomLog.level, randomLog.message);
+        }
+
+        // 觸發掃描
+        function triggerScan() {
+            addLog('info', '手動掃描已啟動');
+            setTimeout(() => {
+                addLog('warning', '發現2個潛在威脅');
+                updateStats();
+            }, 2000);
+        }
+
+        // 顯示警報
+        function showAlert() {
+            const banner = document.getElementById('alertBanner');
+            banner.classList.add('show');
+            setTimeout(() => banner.classList.remove('show'), 3000);
+            addLog('critical', '高風險威脅警報觸發');
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            // 隱藏載入畫面
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }, 2000);
+            
+            createThreatChart();
+            createWorldMap();
+            
+            // 定期更新數據
+            setInterval(updateStats, 5000);
+            setInterval(generateRandomLog, 3000);
+            
+            // 初始日誌
+            addLog('info', '系統初始化完成');
+            addLog('info', 'AI引擎已啟動');
+        });
+
+        // 手機端觸控優化
+        document.addEventListener('touchstart', function(e) {
+            // 防止雙擊縮放
+        }, {passive: true});
+    </script>
+</body>
+</html>
